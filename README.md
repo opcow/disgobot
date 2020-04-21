@@ -85,16 +85,20 @@ type discBot string
 var DiscBot discBot
 
 func (b discBot) BotInit() {
+	// Tell disgobot where to pass messages for processing
 	disgobot.AddMessageProc(messageProc)
 }
 
 func (b discBot) BotExit() {
 }
 
+// messageProc() receives a doscordgo MessageCreate struct and the
+// message content split into an array of words
 func messageProc(m *discordgo.MessageCreate, msg []string) {
 	if strings.ToLower(m.Content) == "ping" {
 		disgobot.Discord.ChannelMessageSend(m.ChannelID, "PONG")
 	}
 }
+
 ```
 ---
