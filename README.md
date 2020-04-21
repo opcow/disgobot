@@ -1,5 +1,6 @@
 # A modular discord  bot frameword in go
 
+disgobot uses [discordgo](https://pkg.go.dev/github.com/bwmarrin/discordgo?tab=doc) under the hood.
 ### Built-in commands:
 | Command  | Description  | Req. Op  |
 |---|---|---|
@@ -60,6 +61,34 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	disgobot.Discord.Close()
+}
+```
+### Example plugin
+```
+package main
+
+import (
+	"strings"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/opcow/disgobot"
+)
+
+type discBot string
+
+var DiscBot discBot
+
+func (b discBot) BotInit() {
+	disgobot.AddMessageProc(messageProc)
+}
+
+func (b discBot) BotExit() {
+}
+
+func messageProc(m *discordgo.MessageCreate, msg []string) {
+	if strings.ToLower(m.Content) == "ping" {
+		disgobot.Discord.ChannelMessageSend(m.ChannelID, "PONG")
+	}
 }
 ```
 
