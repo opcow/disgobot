@@ -204,6 +204,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		count += opUsers(m.Mentions, true)
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%d user%s removed from operators.", count, addS[count != 1]))
 	case "!delmsg":
+		if !IsOp(m.Author.ID) {
+			return
+		}
 		if len(msg) > 2 {
 			s.ChannelMessageDelete(msg[1], msg[2])
 		}

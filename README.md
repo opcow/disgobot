@@ -6,7 +6,7 @@
 | !op \<userid\> \| \<@user\> | add one or more users to the operators  | yes  |
 | !deop \<userid\> \| \<@user\> | remove one or more users from the operators  | yes  |
 | !ops | print the operators list | yes  |
-| !delmsg \<server id\> \<message id\> | delete a message  | no  |
+| !delmsg \<server id\> \<message id\> | delete a message  | yes  |
 | !quit  | kill the bot  | yes  |
 
 ### Command line options
