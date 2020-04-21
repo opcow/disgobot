@@ -207,11 +207,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(msg) > 2 {
 			s.ChannelMessageDelete(msg[1], msg[2])
 		}
-	case "!config":
+	case "!ops":
 		showOps(m.Author.ID)
 	case "!quit":
 		if IsOp(m.Author.ID) && m.Message.GuildID == "" {
+			Discord.Close()
 			SignalChan <- os.Kill
+			fmt.Println("Quitting.")
 		}
 	}
 }
