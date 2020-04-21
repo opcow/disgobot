@@ -10,16 +10,6 @@ disgobot uses [discordgo](https://pkg.go.dev/github.com/bwmarrin/discordgo?tab=d
 | !delmsg \<server id\> \<message id\> | delete a message  | yes  |
 | !quit  | kill the bot  | yes  |
 
-### Command line options
-    -t [discord autentication token]
-	-o [comma separated string of operators for the bot]
-	-o [comma separated string of plugins to load]
-
-The following environment variables can be used instead of the above command line options. Any option given on the command line will override the corresponding environment variable. 
-
-    DISCORDTOKEN
-    TBOPS
-
 ### Example of a minimal bot
 ```
 package main
@@ -40,7 +30,7 @@ var (
 
 func main() {
 
-	flag.Parse() // flags override env good/bad?
+	flag.Parse()
 
 	if *dToken == "" {
 		fmt.Println("Usage: dist_twit -t <auth_token>")
