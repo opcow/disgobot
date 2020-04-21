@@ -5,7 +5,7 @@
 |---|---|---|
 | !op \<userid\> \| \<@user\> | add one or more users to the operators  | yes  |
 | !deop \<userid\> \| \<@user\> | remove one or more users from the operators  | yes  |
-| !ops | print the current config via direct message | yes  |
+| !ops | print the operators list | yes  |
 | !delmsg \<server id\> \<message id\> | delete a message  | no  |
 | !quit  | kill the bot  | yes  |
 
