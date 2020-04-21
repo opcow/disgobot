@@ -15,13 +15,16 @@ type disgoBot interface {
 }
 
 var (
+	// Discord is the discord session pointer
 	Discord     *discordgo.Session
 	messageProc []func(*discordgo.MessageCreate, []string)
-	botOps      map[string]struct{}
+	botOps      = make(map[string]struct{})
 	addS        = map[bool]string{
 		false: "",
 		true:  "s",
 	}
+	// SignalChan - send signal for killing the bot
+	SignalChan = make(chan os.Signal, 1)
 )
 
 // Run starts the bot running.
@@ -83,6 +86,16 @@ func IsOp(id string) bool {
 		Discord.ChannelMessageSend(c.ID, "You are not an operator of this bot.")
 	}
 	return false
+}
+
+// AddOp adds a bot operator.
+func AddOp(id string) {
+	botOps[id] = struct{}{}
+}
+
+// RemOp removes a bot operator.
+func RemOp(id string) {
+	delete(botOps, id)
 }
 
 func opUsers(users []*discordgo.User, deop bool) int {
@@ -198,7 +211,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		showOps(m.Author.ID)
 	case "!quit":
 		if IsOp(m.Author.ID) && m.Message.GuildID == "" {
-			Discord.Close()
+			SignalChan <- os.Kill
 		}
 	}
 }
