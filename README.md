@@ -20,7 +20,8 @@ The following environment variables can be used instead of the above command lin
     TBOPS
 
 ### Example of a minimal bot
-```package main
+```
+package main
 
 import (
 	"flag"
@@ -59,5 +60,6 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	disgobot.Discord.Close()
-}```
+}
+```
 
