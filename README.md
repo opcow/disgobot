@@ -33,7 +33,7 @@ var (
 
 func main() {
 
-	flag.Parse() // flags override env good/bad?
+	flag.Parse()
 
 	if *dToken == "" {
 		fmt.Println("Usage: dist_twit -t <auth_token>")
@@ -45,13 +45,15 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
 	// Add some ops.
 	for _, o := range strings.Split(*operators, ",") {
 		if o != "" {
 			disgobot.AddOp(o)
 		}
 	}
-	// load plugins
+
+	// Load plugins.
 	for _, p := range strings.Split(*plugins, ",") {
 		if p != "" {
 			disgobot.LoadPlugin(p)
