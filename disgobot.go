@@ -9,7 +9,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type discBot interface {
+type disgoBot interface {
 	BotInit()
 	BotExit()
 }
@@ -24,6 +24,8 @@ var (
 	}
 )
 
+// Run starts the bot running.
+// Pass the discord bot token as token.
 func Run(token string) error {
 	var err error
 	Discord, err = discordgo.New("Bot " + token)
@@ -42,6 +44,8 @@ func Run(token string) error {
 	return err
 }
 
+// LoadPlugin takes a path to a bot plugin to load.
+// Plugins add functionality to the bots basic functions.
 func LoadPlugin(p string) {
 	plug, err := plugin.Open(p)
 	if err != nil {
@@ -53,8 +57,8 @@ func LoadPlugin(p string) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	var bot discBot
-	bot, ok := symBot.(discBot)
+	var bot disgoBot
+	bot, ok := symBot.(disgoBot)
 	if !ok {
 		fmt.Println("unexpected type from module symbol")
 		os.Exit(1)
@@ -63,10 +67,13 @@ func LoadPlugin(p string) {
 	// fmt.Println(botFuncs.ChanIDtoMention("foo"))
 }
 
+// AddMessageProc is called by plugins to add their message processing function.
+// A plugin should call this in its BotInit() function.
 func AddMessageProc(p func(*discordgo.MessageCreate, []string)) {
 	messageProc = append(messageProc, p)
 }
 
+// IsOp is passed a user ID and will return true if the user is a bot operator.
 func IsOp(id string) bool {
 	if _, ok := botOps[id]; ok {
 		return true
@@ -105,6 +112,7 @@ func idsToUsers(ids []string) []*discordgo.User {
 	return users
 }
 
+// UserIDtoMention takes a user ID and returns a string formatted as a discord mention.
 func UserIDtoMention(id string) string {
 	u, err := Discord.User(id)
 	if err == nil {
@@ -113,7 +121,8 @@ func UserIDtoMention(id string) string {
 	return id
 }
 
-// Converts a channel ID to a mention. On error it returns the channel ID string.
+// ChanIDtoMention takes a channel ID and returns a discord channel mention.
+// If it fails it returns "channel: " + the channel ID string.
 func ChanIDtoMention(id string) string {
 	channel, err := Discord.State.Channel(id)
 	if err == nil {
@@ -122,7 +131,8 @@ func ChanIDtoMention(id string) string {
 	return "channel: " + id
 }
 
-// Converts a channel link to an ID. If passed a valid ID it is returned it unchanged.
+// ChanMentionToID takes a channel mention and returns a discord channel ID.
+// If passed a valid ID it is returns it unchanged.
 func ChanMentionToID(mention string) (id string, err error) {
 	id = strings.Replace(strings.Replace(strings.Replace(mention, "<", "", 1), ">", "", 1), "#", "", 1)
 	_, err = Discord.Channel(id)
