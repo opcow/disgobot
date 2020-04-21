@@ -76,22 +76,29 @@ func main() {
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/opcow/disgobot"
 )
 
-type discBot string
+type bot string
 
-var DiscBot discBot
+var Bot bot
 
-func (b discBot) BotInit() {
+func (b bot) BotInit(args []string) {
+
 	// Tell disgobot where to pass messages for processing
 	disgobot.AddMessageProc(messageProc)
+
+	// Print out passed in args. args[0] is the plugin pathname
+	for i, o := range args {
+		fmt.Printf("#%d: %s\n", i, o)
+	}
 }
 
-func (b discBot) BotExit() {
+func (b bot) BotExit() {
 }
 
 // messageProc() receives a doscordgo MessageCreate struct and the

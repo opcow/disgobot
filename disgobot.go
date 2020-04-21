@@ -1,6 +1,7 @@
 package disgobot
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"plugin"
@@ -10,7 +11,7 @@ import (
 )
 
 type disgoBot interface {
-	BotInit()
+	BotInit([]string)
 	BotExit()
 }
 
@@ -47,27 +48,26 @@ func Run(token string) error {
 	return err
 }
 
-// LoadPlugin takes a path to a bot plugin to load.
+// LoadPlugin takes a string holding to a path to bot plugin to load.
 // Plugins add functionality to the bots basic functions.
-func LoadPlugin(p string) {
-	plug, err := plugin.Open(p)
+// Args for the plugin can be included using a '?' to separate them.
+func LoadPlugin(p string) error {
+	plugOpts := strings.Split(p, "?")
+	plug, err := plugin.Open(plugOpts[0])
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
-	symBot, err := plug.Lookup("DiscBot")
+	symBot, err := plug.Lookup("Bot")
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 	var bot disgoBot
 	bot, ok := symBot.(disgoBot)
 	if !ok {
-		fmt.Println("unexpected type from module symbol")
-		os.Exit(1)
+		return errors.New("unexpected type from module symbol")
 	}
-	bot.BotInit()
-	// fmt.Println(botFuncs.ChanIDtoMention("foo"))
+	bot.BotInit(plugOpts)
+	return nil
 }
 
 // AddMessageProc is called by plugins to add their message processing function.
@@ -215,8 +215,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "!quit":
 		if IsOp(m.Author.ID) && m.Message.GuildID == "" {
 			Discord.Close()
-			SignalChan <- os.Kill
 			fmt.Println("Quitting.")
+			SignalChan <- os.Kill
 		}
 	}
 }
