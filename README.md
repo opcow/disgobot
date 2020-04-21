@@ -9,7 +9,7 @@ disgobot uses [discordgo](https://pkg.go.dev/github.com/bwmarrin/discordgo?tab=d
 | !ops | print the operators list | yes  |
 | !delmsg \<server id\> \<message id\> | delete a message  | yes  |
 | !quit  | kill the bot  | yes  |
-
+---
 ### Example of a minimal bot
 ```
 package main
@@ -19,18 +19,21 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/opcow/disgobot"
 )
 
 var (
-	dToken = flag.String("t", "", "discord autentication token")
+	dToken    = flag.String("t", "", "discord autentication token")
+	operators = flag.String("o", "", "comma separated string of operators for the bot as discord IDs")
+	plugins   = flag.String("p", "", "comma separated string of bot plugins to load")
 )
 
 func main() {
 
-	flag.Parse()
+	flag.Parse() // flags override env good/bad?
 
 	if *dToken == "" {
 		fmt.Println("Usage: dist_twit -t <auth_token>")
@@ -41,6 +44,18 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+	// Add some ops.
+	for _, o := range strings.Split(*operators, ",") {
+		if o != "" {
+			disgobot.AddOp(o)
+		}
+	}
+	// load plugins
+	for _, p := range strings.Split(*plugins, ",") {
+		if p != "" {
+			disgobot.LoadPlugin(p)
+		}
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
@@ -53,6 +68,7 @@ func main() {
 	disgobot.Discord.Close()
 }
 ```
+---
 ### Example plugin
 ```
 package main
@@ -81,4 +97,4 @@ func messageProc(m *discordgo.MessageCreate, msg []string) {
 	}
 }
 ```
-
+---
