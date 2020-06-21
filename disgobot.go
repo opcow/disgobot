@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/rs/xid"
 )
 
 type disgoBot interface {
@@ -15,12 +16,14 @@ type disgoBot interface {
 	BotExit()
 }
 
+type messageProc func(*discordgo.MessageCreate, []string)
+
 var (
 	// Discord is the discord session pointer
-	Discord     *discordgo.Session
-	messageProc []func(*discordgo.MessageCreate, []string)
-	botOps      = make(map[string]struct{})
-	addS        = map[bool]string{
+	Discord      *discordgo.Session
+	messageProcs = make(map[string]messageProc)
+	botOps       = make(map[string]struct{})
+	addS         = map[bool]string{
 		false: "",
 		true:  "s",
 	}
@@ -72,8 +75,18 @@ func LoadPlugin(p string) error {
 
 // AddMessageProc is called by plugins to add their message processing function.
 // A plugin should call this in its BotInit() function.
-func AddMessageProc(p func(*discordgo.MessageCreate, []string)) {
-	messageProc = append(messageProc, p)
+func AddMessageProc(p func(*discordgo.MessageCreate, []string)) string {
+	// messageProcs = append(messageProcs, p)
+	guid := xid.New()
+	messageProcs[guid.String()] = p
+	return guid.String()
+}
+
+func RemMessageProc(id string) {
+	_, ok := messageProcs[id]
+	if ok {
+		delete(messageProcs, id)
+	}
 }
 
 // IsOp is passed a user ID and will return true if the user is a bot operator.
@@ -177,7 +190,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	msg := strings.Split(m.Content, " ")
-	for _, f := range messageProc {
+	for _, f := range messageProcs {
 		f(m, msg)
 	}
 	switch msg[0] {
