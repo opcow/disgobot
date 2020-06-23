@@ -8,20 +8,21 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/rs/xid"
 )
 
 type disgoBot interface {
-	BotInit([]string)
+	BotInit([]string) error
 	BotExit()
+	MessageProc(*discordgo.MessageCreate, []string) bool
 }
 
-type messageProc func(*discordgo.MessageCreate, []string)
+// MessageProc is a discord message processor function
+type MessageProc func(*discordgo.MessageCreate, []string) bool
 
 var (
 	// Discord is the discord session pointer
 	Discord      *discordgo.Session
-	messageProcs = make(map[string]messageProc)
+	messageProcs []MessageProc
 	botOps       = make(map[string]struct{})
 	addS         = map[bool]string{
 		false: "",
@@ -69,27 +70,27 @@ func LoadPlugin(p string) error {
 	if !ok {
 		return errors.New("unexpected type from module symbol")
 	}
-	bot.BotInit(plugOpts)
-	return nil
+	err = bot.BotInit(plugOpts)
+	if err == nil {
+		addMessageProc(bot.MessageProc)
+	}
+	return err
 }
 
-// AddMessageProc is called by plugins to add their message processing function.
+// addMessageProc is called by plugins to add their message processing function.
 // A plugin should call this in its BotInit() function.
-func AddMessageProc(p func(*discordgo.MessageCreate, []string)) string {
-	// messageProcs = append(messageProcs, p)
-	guid := xid.New()
-	messageProcs[guid.String()] = p
-	return guid.String()
+func addMessageProc(p MessageProc) {
+	messageProcs = append(messageProcs, p)
 }
 
 // RemMessageProc is called by plugins to remove their message processing function.
-func RemMessageProc(id string) bool {
-	_, ok := messageProcs[id]
-	if ok {
-		delete(messageProcs, id)
-	}
-	return ok
-}
+// func RemMessageProc(id string) bool {
+// 	_, ok := messageProcs[id]
+// 	if ok {
+// 		delete(messageProcs, id)
+// 	}
+// 	return ok
+// }
 
 // IsOp is passed a user ID and will return true if the user is a bot operator.
 func IsOp(id string) bool {
@@ -198,13 +199,16 @@ func checkOpAndDeny(id string) bool {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 	msg := strings.Split(m.Content, " ")
-	for _, f := range messageProcs {
-		f(m, msg)
+	for i, f := range messageProcs {
+		if f != nil {
+			if quit := f(m, msg); quit {
+				messageProcs[i] = nil
+			}
+		}
 	}
 	switch msg[0] {
 	case "!op":
