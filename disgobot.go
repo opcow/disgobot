@@ -82,21 +82,19 @@ func AddMessageProc(p func(*discordgo.MessageCreate, []string)) string {
 	return guid.String()
 }
 
-func RemMessageProc(id string) {
+// RemMessageProc is called by plugins to remove their message processing function.
+func RemMessageProc(id string) bool {
 	_, ok := messageProcs[id]
 	if ok {
 		delete(messageProcs, id)
 	}
+	return ok
 }
 
 // IsOp is passed a user ID and will return true if the user is a bot operator.
 func IsOp(id string) bool {
 	if _, ok := botOps[id]; ok {
 		return true
-	}
-	c, err := Discord.UserChannelCreate(id)
-	if err == nil {
-		Discord.ChannelMessageSend(c.ID, "You are not an operator of this bot.")
 	}
 	return false
 }
@@ -182,6 +180,21 @@ func showOps(id string) {
 	}
 }
 
+func denyCommand(id string) {
+	c, err := Discord.UserChannelCreate(id)
+	if err == nil {
+		Discord.ChannelMessageSend(c.ID, "You are not an operator of this bot.")
+	}
+}
+
+func checkOpAndDeny(id string) bool {
+	var status bool
+	if status = IsOp(id); !status {
+		denyCommand(id)
+	}
+	return status
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Ignore all messages created by the bot itself
@@ -195,7 +208,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	switch msg[0] {
 	case "!op":
-		if !IsOp(m.Author.ID) {
+		if !checkOpAndDeny(m.Author.ID) {
 			return
 		}
 		count := 0
@@ -206,7 +219,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		count += opUsers(m.Mentions, false)
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%d user%s added to operators.", count, addS[count != 1]))
 	case "!deop":
-		if !IsOp(m.Author.ID) {
+		if !checkOpAndDeny(m.Author.ID) {
 			return
 		}
 		count := 0
@@ -217,7 +230,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		count += opUsers(m.Mentions, true)
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%d user%s removed from operators.", count, addS[count != 1]))
 	case "!delmsg":
-		if !IsOp(m.Author.ID) {
+		if !checkOpAndDeny(m.Author.ID) {
 			return
 		}
 		if len(msg) > 2 {
@@ -226,7 +239,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "!ops":
 		showOps(m.Author.ID)
 	case "!quit":
-		if IsOp(m.Author.ID) && m.Message.GuildID == "" {
+		if m.Message.GuildID == "" {
+			if !checkOpAndDeny(m.Author.ID) {
+				return
+			}
 			Discord.Close()
 			fmt.Println("Quitting.")
 			SignalChan <- os.Kill
