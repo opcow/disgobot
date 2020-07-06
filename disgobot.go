@@ -72,16 +72,16 @@ func LoadPlugin(p string) error {
 	}
 	err = bot.BotInit(plugOpts)
 	if err == nil {
-		addMessageProc(bot.MessageProc)
+		messageProcs = append(messageProcs, bot.MessageProc)
 	}
 	return err
 }
 
 // addMessageProc is called by plugins to add their message processing function.
 // A plugin should call this in its BotInit() function.
-func addMessageProc(p MessageProc) {
-	messageProcs = append(messageProcs, p)
-}
+// func addMessageProc(p MessageProc) {
+// 	messageProcs = append(messageProcs, p)
+// }
 
 // RemMessageProc is called by plugins to remove their message processing function.
 // func RemMessageProc(id string) bool {
@@ -204,10 +204,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	msg := strings.Split(m.Content, " ")
 	for i, f := range messageProcs {
-		if f != nil {
-			if quit := f(m, msg); quit {
-				messageProcs[i] = nil
-			}
+		if f != nil && !f(m, msg) {
+			// if the message proc returns false stop calling it
+			messageProcs[i] = nil
 		}
 	}
 	switch msg[0] {
